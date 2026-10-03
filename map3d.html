@@ -1,1 +1,343 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>トラウトファーム秋川 場内マップ</title>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.184.0/build/three.module.js",
+    "three/addons/controls/OrbitControls.js": "https://unpkg.com/three@0.184.0/examples/jsm/controls/OrbitControls.js",
+    "three/addons/exporters/OBJExporter.js": "https://unpkg.com/three@0.184.0/examples/jsm/exporters/OBJExporter.js",
+    "three/addons/exporters/GLTFExporter.js": "https://unpkg.com/three@0.184.0/examples/jsm/exporters/GLTFExporter.js"
+  },
+  "integrity": {
+    "https://unpkg.com/three@0.184.0/build/three.module.js": "sha384-8FCZ1eVO6it4+pbec2aDtnTrwjWXZLJRC+MAGCIPDgsYnUrl/E0A2YlF8ioMKI/J",
+    "https://unpkg.com/three@0.184.0/build/three.core.js": "sha384-dw2ooPewaEIrAgl6oFDBmmBWCE9oW9LxRGcfwZ0hLvEprzo202wXl7vCYHRlSnOT",
+    "https://unpkg.com/three@0.184.0/examples/jsm/controls/OrbitControls.js": "sha384-4rziNxOBZKQ69i+w+f89KJ55TCYquwchVbByQwmaOeIOXdOU2PLDn3kOfXHwIJC9",
+    "https://unpkg.com/three@0.184.0/examples/jsm/exporters/OBJExporter.js": "sha384-nbwtoZENJD3Vq+ACK0CuGQdPMuDWHkamC2KJD70EV5nfg6jQjfppKOea07YJN+N3",
+    "https://unpkg.com/three@0.184.0/examples/jsm/exporters/GLTFExporter.js": "sha384-VofkvpG6HERhFCYbsUOHeNXBCqID2nfqkQqnVzE1jc/oPcz+qJ13ADdXH08hE+cQ"
+  }
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#4a2f1f;--cream:#fbf4e6;--teal:#2f9e92;--ember:#f07f2a;--maple:#d9452b;}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;overflow:hidden;background:#f3ead8;font-family:"Zen Maru Gothic",sans-serif;color:var(--ink)}
+  a{color:var(--teal)} a:hover{color:var(--maple)}
+  three-d-stage:not(:defined){visibility:hidden}
+  three-d-stage{position:fixed;inset:0;width:100vw;height:100dvh;display:block}
+  #pins{position:fixed;inset:0;pointer-events:none}
+  .pin{position:absolute;left:0;top:0;display:flex;flex-direction:column;align-items:center;gap:3px;border:0;background:none;padding:0;cursor:pointer;pointer-events:auto;font-family:inherit;transform-origin:50% 100%}
+  .pin .ic{width:40px;height:40px;border-radius:50%;background:#fff;display:grid;place-items:center;font-size:21px;box-shadow:0 3px 0 rgba(74,47,31,.18),0 6px 14px rgba(74,47,31,.18);border:2.5px solid #fff;transition:transform .2s}
+  .pin .lb{font-size:11.5px;font-weight:900;background:var(--ink);color:#fff;padding:2px 8px;border-radius:99px;white-space:nowrap}
+  .pin::after{content:"";width:3px;height:10px;background:#fff;border-radius:2px;margin-top:-1px;box-shadow:0 2px 4px rgba(0,0,0,.15)}
+  .pin.on .ic{transform:scale(1.18);border-color:var(--ember)}
+  .pin.on .lb{background:var(--ember)}
+  header{position:fixed;top:max(12px,env(safe-area-inset-top));left:12px;right:12px;display:flex;flex-direction:column;align-items:flex-start;gap:4px;pointer-events:none}
+  header h1{margin:0;font-size:19px;font-weight:900;background:var(--cream);padding:6px 14px;border-radius:14px;box-shadow:0 3px 0 rgba(74,47,31,.12)}
+  header h1 small{font-size:11px;font-weight:700;color:var(--teal);display:block;letter-spacing:.06em}
+  header p{margin:0;font-size:11px;font-weight:700;background:rgba(251,244,230,.92);padding:3px 10px;border-radius:99px}
+  #legend{position:fixed;left:10px;bottom:max(10px,env(safe-area-inset-bottom));background:var(--cream);border-radius:18px;padding:10px 12px 8px;box-shadow:0 4px 0 rgba(74,47,31,.12),0 10px 24px rgba(74,47,31,.12);max-width:min(232px,62vw)}
+  #legend button.t{all:unset;cursor:pointer;font-size:12px;font-weight:900;display:flex;justify-content:space-between;width:100%;gap:8px}
+  #legend ul{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:2px}
+  #legend.closed ul{display:none}
+  #legend li button{all:unset;cursor:pointer;display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:3px 4px;border-radius:8px;width:100%;box-sizing:border-box}
+  #legend li button:active{background:#f1e4cc}
+  #legend .e{width:22px;text-align:center;font-size:15px}
+  #legend .q{margin-left:auto;font-size:9.5px;font-weight:900;color:#8a6a55;background:#eadcc4;border-radius:99px;padding:1px 6px;white-space:nowrap}
+  #card{position:fixed;left:50%;top:calc(max(12px,env(safe-area-inset-top)) + 78px);transform:translate(-50%,-8px);width:min(340px,calc(100vw - 24px));background:#fff;border-radius:20px;padding:14px 16px 14px 14px;display:flex;gap:12px;align-items:flex-start;box-shadow:0 5px 0 rgba(74,47,31,.12),0 14px 30px rgba(74,47,31,.18);opacity:0;pointer-events:none;transition:.22s}
+  #card.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+  #card .e{font-size:28px;width:46px;height:46px;border-radius:14px;background:var(--cream);display:grid;place-items:center;flex:none}
+  #card h2{margin:0 0 2px;font-size:15px;font-weight:900}
+  #card p{margin:0;font-size:12.5px;line-height:1.6;font-weight:500;text-wrap:pretty}
+  #card .q{display:inline-block;margin-top:5px;font-size:11px;font-weight:900;color:#fff;background:var(--maple);border-radius:99px;padding:1px 8px}
+  #card .x{all:unset;cursor:pointer;margin-left:auto;font-size:18px;line-height:1;color:#a58b78;padding:2px 4px}
+  #chara{position:fixed;right:6px;bottom:max(6px,env(safe-area-inset-bottom));width:112px;border:0;background:none;padding:0;cursor:pointer}
+  #chara .bub{position:absolute;right:58px;top:-6px;background:#fff;font-size:11.5px;font-weight:900;padding:5px 10px;border-radius:14px;white-space:nowrap;box-shadow:0 3px 0 rgba(74,47,31,.12)}
+  #chara .bub::after{content:"";position:absolute;right:10px;bottom:-6px;border:6px solid transparent;border-top-color:#fff;border-bottom:0}
+  #chara svg{display:block;width:100%;animation:bob 2.4s ease-in-out infinite}
+  @keyframes bob{50%{transform:translateY(-4px)}}
+  #card .q[hidden]{display:none}
+  #backLink{position:fixed;top:max(12px,env(safe-area-inset-top));right:12px;z-index:5;font-size:12px;font-weight:900;text-decoration:none;color:#fff;background:var(--ember);padding:7px 12px;border-radius:99px;box-shadow:0 3px 0 #c9621a}
+  .hint{position:fixed;left:50%;bottom:max(10px,env(safe-area-inset-bottom));transform:translateX(-50%);font-size:10.5px;font-weight:700;color:#8a6a55;pointer-events:none;white-space:nowrap}
+  @media (max-width:560px){.hint{display:none}}
+</style>
+</head>
+<body>
+<three-d-stage name="trout-farm-akigawa" background="#f3ead8"></three-d-stage>
+<div id="pins"></div>
+<a id="backLink" href="index.html" hidden>‹ しおりへ</a>
+<header>
+  <h1><small>東京都檜原村・秋川渓谷</small>トラウトファーム秋川 場内マップ</h1>
+  <p>配置はイメージです。正確な場所は現地で確認してね</p>
+</header>
+<div id="card" role="dialog" aria-live="polite">
+  <div class="e" id="cE"></div>
+  <div><h2 id="cT"></h2><p id="cD"></p><span class="q" id="cQ" hidden>現地で確認</span></div>
+  <button class="x" id="cX" aria-label="閉じる">×</button>
+</div>
+<nav id="legend">
+  <button class="t" id="lgT"><span>凡例</span><span id="lgA">▾</span></button>
+  <ul id="lgList"></ul>
+</nav>
+<div class="hint">ドラッグで回転・ピンチで拡大縮小・アイコンをタップ</div>
+<button id="chara" aria-label="ネオ黒糖ロール：BBQスペースを見る">
+  <span class="bub">BBQはこっち！</span>
+  <svg viewBox="0 0 120 112">
+    <ellipse cx="62" cy="106" rx="34" ry="5" fill="rgba(74,47,31,.18)"/>
+    <path d="M30 58 Q12 44 8 26" stroke="#8a4d24" stroke-width="7" stroke-linecap="round" fill="none"/>
+    <circle cx="8" cy="24" r="6" fill="#8a4d24"/>
+    <path d="M7 18 L3 7" stroke="#8a4d24" stroke-width="5" stroke-linecap="round"/>
+    <ellipse cx="62" cy="66" rx="40" ry="38" fill="#a8622c"/>
+    <ellipse cx="62" cy="62" rx="36" ry="33" fill="#c47a3a"/>
+    <path d="M62 62 m0 -4 a4 4 0 1 1 -4 4 a8 8 0 1 1 8 8 a12 12 0 1 1 -12 -12 a16 16 0 1 1 16 16 a21 21 0 1 1 -21 -21 a26 26 0 0 1 26 26" fill="none" stroke="#6b3517" stroke-width="5" stroke-linecap="round" opacity=".85"/>
+    <ellipse cx="44" cy="40" rx="10" ry="5" fill="#fff" opacity=".35" transform="rotate(-25 44 40)"/>
+    <circle cx="50" cy="66" r="4.2" fill="#2e1a0e"/><circle cx="74" cy="66" r="4.2" fill="#2e1a0e"/>
+    <circle cx="51.4" cy="64.6" r="1.4" fill="#fff"/><circle cx="75.4" cy="64.6" r="1.4" fill="#fff"/>
+    <ellipse cx="42" cy="76" rx="5" ry="3" fill="#f08a6a" opacity=".7"/><ellipse cx="82" cy="76" rx="5" ry="3" fill="#f08a6a" opacity=".7"/>
+    <path d="M57 75 Q62 81 67 75" stroke="#2e1a0e" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+    <path d="M94 74 Q104 80 102 92" stroke="#8a4d24" stroke-width="7" stroke-linecap="round" fill="none"/>
+    <ellipse cx="50" cy="102" rx="9" ry="5" fill="#8a4d24"/><ellipse cx="76" cy="102" rx="9" ry="5" fill="#8a4d24"/>
+  </svg>
+</button>
 
+<script>if (window.self === window.top) document.getElementById('backLink').hidden = false;</script>
+<script src="three-d-stage.js"></script>
+<script type="module">
+// 施設データ。pos が null の施設は位置未確認 →「現地で確認」表示（写真が届いたら座標を入れる）
+const SPOTS = [
+  {id:'toilet', e:'🚻', n:'トイレ（水洗）', pos:null, d:'水洗トイレあり。場所は受付で聞いてね。'},
+  {id:'reception', e:'🏠', n:'受付', pos:[-4,7.2,-13], d:'着いたらまずここで受付。営業は8:00〜17:00。'},
+  {id:'parking', e:'🅿️', n:'駐車場（約12台）', pos:[-18,3.4,-13], d:'台数が少なく予約制。事前に電話（042-598-0204）で駐車場を予約しておこう。'},
+  {id:'bbq', e:'🍖', n:'BBQスペース（川原）', pos:[-6,3.6,5], d:'川原のBBQスペース。木陰が多く、川の音を聞きながらのんびりできる。'},
+  {id:'pond', e:'🎣', n:'釣り堀（ヤマメ・ニジマス）', pos:[13,3.4,-4.5], d:'ヤマメとニジマスが釣れる。釣った魚はBBQで焼いて食べられる。'},
+  {id:'river', e:'🌊', n:'秋川（川遊びエリア）', pos:[22,2.4,12.5], d:'川遊びができる清流。10月の水は冷たいので、濡れてもいい靴と着替えを。'},
+  {id:'water', e:'🚰', n:'水場（炊事場）', pos:null, d:'食材や網を洗う炊事場。場所は現地で確認。'},
+  {id:'smoke', e:'🚬', n:'喫煙スペース', pos:null, d:'喫煙は決められた場所で。場所は受付で確認しよう。'},
+  {id:'rental', e:'⛺', n:'レンタル品の受け取り', pos:null, d:'タープ・コンロなどのレンタル品の受け取り場所。受付で確認しよう。'},
+];
+
+const stage = document.querySelector('three-d-stage');
+const { THREE } = await stage.ready;
+const hide = document.createElement('style');
+hide.textContent = '.note,.toolbar{display:none!important}';
+stage.shadowRoot.appendChild(hide);
+
+let seed = 7;
+const rnd = () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+
+const M = (name, color, o = {}) => Object.assign(new THREE.MeshStandardMaterial({ name, color, roughness: 0.85, metalness: 0 }), o);
+const mat = {
+  grass: M('grass', '#a8c777'), soil: M('soil', '#b07a50'), water: M('river_water', '#45b8a8', { roughness: 0.3 }),
+  gravel: M('gravel', '#ece0c6'), asphalt: M('asphalt', '#9a9a96'), line: M('paint_white', '#ffffff'),
+  wall: M('wall_cream', '#fbf2e2'), roof: M('roof_red', '#d9452b'), wood: M('wood', '#b27a4c'),
+  cedar: M('cedar_green', '#5e9a62'), cedar2: M('cedar_dark', '#4a8458'), maple: M('maple_red', '#e2553a'),
+  orange: M('leaf_orange', '#f29a3c'), yellow: M('leaf_yellow', '#f3c752'), rock: M('rock', '#cfc8bb'),
+  concrete: M('concrete', '#ddd6c8'), pondWater: M('pond_water', '#3aa59a', { roughness: 0.25 }),
+  ember: M('charcoal_ember', '#ff7a1f', { emissive: '#ff5a00', emissiveIntensity: 0.9 }), grill: M('grill_black', '#4a3a33'),
+  carTeal: M('car_teal', '#5fc1b4'), carCream: M('car_cream', '#f7e3b5'), carRed: M('car_red', '#e86a4c'), glass: M('glass', '#cfeee9', { roughness: 0.2 }),
+  tarp: M('tarp_orange', '#f0892e'), path: M('path_dirt', '#e2cfa8'),
+};
+
+const map = new THREE.Group(); map.name = 'trout_farm_akigawa';
+const add = (geo, m, name, x = 0, y = 0, z = 0, parent = map) => { const o = new THREE.Mesh(geo, m); o.name = name; o.position.set(x, y, z); parent.add(o); return o; };
+
+function rr(w, d, r) {
+  const s = new THREE.Shape(), x = -w / 2, y = -d / 2; r = Math.min(r, w / 2, d / 2);
+  s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r);
+  s.lineTo(x + w, y + d - r); s.quadraticCurveTo(x + w, y + d, x + w - r, y + d);
+  s.lineTo(x + r, y + d); s.quadraticCurveTo(x, y + d, x, y + d - r);
+  s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y); return s;
+}
+// 角丸ボックス（底面 y=0）
+function rbox(w, h, d, r = 0.3, b = Math.min(0.25, h / 3)) {
+  const g = new THREE.ExtrudeGeometry(rr(w - 2 * b, d - 2 * b, Math.max(r - b, 0.01)), { depth: Math.max(h - 2 * b, 0.001), bevelEnabled: true, bevelThickness: b, bevelSize: b, bevelSegments: 3, curveSegments: 8 });
+  g.rotateX(-Math.PI / 2); g.translate(0, b, 0); return g;
+}
+function flat(points, depth = 0.1) {
+  const s = new THREE.Shape(points.map(([x, z]) => new THREE.Vector2(x, -z)));
+  const g = new THREE.ExtrudeGeometry(s, { depth, bevelEnabled: false, curveSegments: 4 }); g.rotateX(-Math.PI / 2); return g;
+}
+
+// 地面（ジオラマの台）
+const G = 0.05;
+add(rbox(72, 3.2, 52, 5, 0.6), mat.soil, 'base_soil', 0, -3.6, 0);
+add(rbox(72.6, 0.7, 52.6, 5.3, 0.3), mat.grass, 'base_grass', 0, -0.65, 0);
+
+// 秋川
+const zc = x => 12.6 + 1.7 * Math.sin(x / 9);
+const top = [], bot = [], beach = [];
+for (let x = -35.6; x <= 35.6; x += 1.4) { top.push([x, zc(x) - 3.4]); bot.push([x, zc(x) + 3.6]); }
+add(flat([...top, ...bot.reverse()], 0.12), mat.water, 'akigawa_river', 0, G + 0.02, 0);
+// 川原（砂利）
+for (let x = -25; x <= 15; x += 1.25) beach.push([x, zc(x) - 3.2]);
+const bk = []; for (let x = 15; x >= -25; x -= 1.25) bk.push([x, zc(x) - 3.2 - (6.5 - Math.pow((x + 5) / 20, 2) * 4)]);
+add(flat([...beach, ...bk], 0.08), mat.gravel, 'riverbank_gravel', 0, G, 0);
+// 石
+const rockGeo = new THREE.IcosahedronGeometry(1, 1);
+for (let i = 0; i < 46; i++) {
+  const x = -35 + rnd() * 70, side = rnd() < 0.5 ? -3.4 : 3.6, s = 0.35 + rnd() * 0.7;
+  const r = add(rockGeo, mat.rock, 'river_rock_' + i, x, G + 0.05, zc(x) + side + (rnd() - 0.5) * 1.4);
+  r.scale.set(s * 1.2, s * 0.55, s); r.rotation.y = rnd() * 6;
+}
+for (let i = 0; i < 6; i++) { const x = -20 + i * 8 + rnd() * 3; const r = add(rockGeo, mat.rock, 'river_stone_mid_' + i, x, G + 0.05, zc(x) + (rnd() - 0.5) * 3); r.scale.set(0.9, 0.45, 0.7); }
+
+// 道路（北秋川沿いの県道）
+add(rbox(72, 0.12, 5, 0.1, 0.04), mat.asphalt, 'road', 0, G, -21.5);
+for (let x = -33; x < 34; x += 5) add(rbox(2.2, 0.03, 0.3, 0.1, 0.01), mat.line, 'road_line', x, G + 0.12, -21.5);
+
+// 駐車場
+const lot = new THREE.Group(); lot.name = 'parking'; map.add(lot);
+add(rbox(19, 0.14, 8.5, 1.2, 0.05), mat.asphalt, 'parking_lot', -18.5, G, -13.6, lot);
+add(rbox(4, 0.12, 4, 0.2, 0.04), mat.asphalt, 'parking_entrance', -18, G, -18, lot);
+for (let i = 0; i < 6; i++) add(rbox(0.22, 0.03, 3.4, 0.1, 0.01), mat.line, 'parking_line', -27 + i * 3.4, G + 0.14, -15.2, lot);
+const carCols = [mat.carTeal, mat.carCream, mat.carRed, mat.carTeal];
+[[-25.3, 0], [-21.9, 1], [-15.1, 2], [-11.7, 1]].forEach(([x, c], i) => {
+  const car = new THREE.Group(); car.name = 'car_' + i; car.position.set(x, G + 0.14, -15.2); lot.add(car);
+  add(rbox(2.0, 0.9, 3.4, 0.6, 0.3), carCols[c], 'car_body', 0, 0.25, 0, car);
+  add(rbox(1.7, 0.75, 1.9, 0.5, 0.25), mat.glass, 'car_cabin', 0, 1.05, 0.15, car);
+  [[-0.95, -1], [0.95, -1], [-0.95, 1], [0.95, 1]].forEach(([wx, wz]) => { const w = add(new THREE.CylinderGeometry(0.38, 0.38, 0.3, 24), mat.grill, 'car_wheel', wx, 0.38, wz * 1.05, car); w.rotation.z = Math.PI / 2; });
+});
+
+// 受付の建物
+const office = new THREE.Group(); office.name = 'reception'; office.position.set(-4, G, -13.5); map.add(office);
+add(rbox(7, 3, 5.4, 0.5, 0.2), mat.wall, 'reception_wall', 0, 0, 0, office);
+const roofShape = new THREE.Shape([new THREE.Vector2(-4.2, 0), new THREE.Vector2(4.2, 0), new THREE.Vector2(0, 2.4)]);
+const roofG = new THREE.ExtrudeGeometry(roofShape, { depth: 6.2, bevelEnabled: true, bevelThickness: 0.2, bevelSize: 0.2, bevelSegments: 3 });
+roofG.translate(0, 0, -3.1);
+add(roofG, mat.roof, 'reception_roof', 0, 3.0, 0, office);
+add(rbox(1.3, 2, 0.2, 0.3, 0.08), mat.wood, 'reception_door', -1.6, 0, 2.72, office);
+add(rbox(1.8, 1.1, 0.2, 0.3, 0.08), mat.glass, 'reception_window', 1.5, 1.2, 2.72, office);
+add(rbox(2.6, 0.18, 1.2, 0.1, 0.05), mat.wood, 'reception_deck', -1.6, 0, 3.4, office);
+
+// 釣り堀
+const pond = new THREE.Group(); pond.name = 'fishing_pond'; pond.position.set(13, G, -4.5); map.add(pond);
+[[-4.3, 0], [0, 0], [4.3, 0]].forEach(([x], i) => {
+  add(rbox(3.8, 0.7, 6.6, 0.9, 0.25), mat.concrete, 'pond_wall_' + i, x, 0, 0, pond);
+  add(rbox(3.0, 0.1, 5.8, 0.6, 0.03), mat.pondWater, 'pond_water_' + i, x, 0.62, 0, pond);
+});
+const fishG = new THREE.SphereGeometry(0.28, 16, 10);
+for (let i = 0; i < 9; i++) { const f = add(fishG, mat.orange, 'trout_' + i, -4.3 + (i % 3) * 4.3 + (rnd() - 0.5) * 1.6, 0.74, (rnd() - 0.5) * 4.4, pond); f.scale.set(0.5, 0.3, 1.4); f.rotation.y = rnd() * 3; f.material = i % 2 ? mat.rock : mat.orange; }
+add(rbox(12, 0.18, 1.6, 0.4, 0.06), mat.wood, 'pond_deck', 0, 0, 4.1, pond);
+
+// BBQスペース
+const bbq = new THREE.Group(); bbq.name = 'bbq_area'; map.add(bbq);
+const grillAt = (x, z, i) => {
+  const g = new THREE.Group(); g.name = 'bbq_set_' + i; g.position.set(x, G + 0.08, z); bbq.add(g);
+  add(rbox(1.8, 0.7, 0.9, 0.2, 0.08), mat.grill, 'grill', 0, 0.6, 0, g);
+  add(rbox(1.5, 0.12, 0.6, 0.15, 0.04), mat.ember, 'grill_coals', 0, 1.25, 0, g);
+  [[-0.7, -0.3], [0.7, -0.3], [-0.7, 0.3], [0.7, 0.3]].forEach(([lx, lz]) => add(new THREE.CylinderGeometry(0.06, 0.06, 0.6, 8), mat.grill, 'grill_leg', lx, 0.3, lz, g));
+  add(rbox(2.6, 0.18, 1.3, 0.3, 0.06), mat.wood, 'table_top', 0, 0.85, -1.9, g);
+  add(rbox(2.2, 0.85, 0.9, 0.2, 0.08), mat.wood, 'table_base', 0, 0, -1.9, g).scale.set(0.3, 1, 0.5);
+  [-1, 1].forEach(s => add(rbox(2.4, 0.5, 0.5, 0.2, 0.08), mat.wood, 'bench', 0, 0, -1.9 + s * 1.2, g));
+};
+grillAt(-17, 5.6, 0); grillAt(-10, 4.6, 1); grillAt(-3, 4.3, 2); grillAt(4.5, 5.2, 3);
+// タープ
+const tarp = new THREE.Group(); tarp.name = 'tarp'; tarp.position.set(-10, G, 3.8); bbq.add(tarp);
+const tarpM = add(new THREE.ConeGeometry(3.6, 1.1, 4, 1), mat.tarp, 'tarp_sheet', 0, 3.2, 0, tarp); tarpM.rotation.y = Math.PI / 4;
+[[-2.4, -2.4], [2.4, -2.4], [-2.4, 2.4], [2.4, 2.4]].forEach(([x, z]) => add(new THREE.CylinderGeometry(0.07, 0.07, 2.9, 8), mat.wood, 'tarp_pole', x * 0.95, 1.45, z * 0.95, tarp));
+
+// 小道
+const pathSeg = (x1, z1, x2, z2, name) => { const L = Math.hypot(x2 - x1, z2 - z1); const p = add(rbox(L, 0.06, 1.8, 0.9, 0.02), mat.path, name, (x1 + x2) / 2, G, (z1 + z2) / 2); p.rotation.y = -Math.atan2(z2 - z1, x2 - x1); };
+pathSeg(-9, -12, -6, -12, 'path_lot_office');
+pathSeg(-5.5, -10.5, -4.5, 0.5, 'path_office_bbq');
+pathSeg(-4.5, -4.5, 6.4, -4.5, 'path_to_pond');
+pathSeg(-4.5, 0, -12, 1.2, 'path_bbq_west');
+
+// 木
+const cone1 = new THREE.ConeGeometry(1.5, 3, 24), cone2 = new THREE.ConeGeometry(1.1, 2.4, 24);
+const ball = new THREE.SphereGeometry(1, 28, 18), trunkG = new THREE.CylinderGeometry(0.22, 0.3, 1.4, 12);
+const blocked = [[-29, -19, -8, -8], [-9, -18, 1, -9], [5, -9, 21, 0], [-26, -1.5, 16, 8.5], [-37, -26, 37, -18.5], [-7, -9, -3, 0]];
+const inBlock = (x, z) => blocked.some(([a, b, c, d]) => x > a && x < c && z > b && z < d) || Math.abs(z - zc(x)) < 4.6;
+let ti = 0;
+const tree = (x, z, s) => {
+  const t = new THREE.Group(); t.name = 'tree_' + ti++; t.position.set(x, G, z); t.scale.setScalar(s); t.rotation.y = rnd() * 6; map.add(t);
+  add(trunkG, mat.wood, 'trunk', 0, 0.7, 0, t);
+  const k = rnd();
+  if (k < 0.34) { add(cone1, rnd() < 0.5 ? mat.cedar : mat.cedar2, 'cedar_low', 0, 2.3, 0, t); add(cone2, mat.cedar, 'cedar_top', 0, 3.6, 0, t); }
+  else {
+    const m = k < 0.62 ? mat.maple : k < 0.84 ? mat.orange : (k < 0.92 ? mat.yellow : mat.cedar);
+    const b = add(ball, m, 'crown', 0, 2.4, 0, t); b.scale.set(1.5, 1.35, 1.5);
+    const b2 = add(ball, m, 'crown_side', 0.8, 2.0, 0.4, t); b2.scale.setScalar(0.95);
+    const b3 = add(ball, m, 'crown_side', -0.6, 2.1, -0.5, t); b3.scale.setScalar(0.85);
+  }
+};
+for (let i = 0, n = 0; i < 1400 && n < 110; i++) {
+  const x = -34 + rnd() * 68, z = -17.5 + rnd() * 42;
+  if (inBlock(x, z) || Math.abs(x) > 34 || z > 24.5) continue;
+  const edge = Math.min(34 - Math.abs(x), 24.5 - z);
+  if (z > 17 && rnd() < 0.35) continue;
+  tree(x, z, z > 16 ? 0.7 + rnd() * 0.25 : 0.85 + rnd() * 0.45 + (edge < 5 ? 0.2 : 0)); n++;
+}
+// 道路の奥の山林
+for (let x = -34; x <= 34; x += 2.6 + rnd()) { tree(x, -24.3 + rnd() * 0.8, 1.15 + rnd() * 0.5); }
+
+stage._camera.fov = 26;
+stage.setObject(map);
+stage._key.intensity = 1.9; stage._key.position.set(-6, 10, 6);
+stage._ground.material.opacity = 0.12;
+
+// カメラ：アイソメ風の斜め見下ろし、画面幅に合わせて距離を決める
+const cam = stage._camera, ctl = stage._controls;
+const center = new THREE.Vector3(0, 0, 1);
+function frame() {
+  const a = cam.aspect, v = THREE.MathUtils.degToRad(cam.fov) / 2;
+  const h = Math.atan(Math.tan(v) * a);
+  const dist = Math.max(30 / Math.tan(v), 40 / Math.tan(h)) * (a < 0.8 ? 0.82 : 1.05);
+  cam.position.copy(center).add(new THREE.Vector3(0.62, 1.05, 1).normalize().multiplyScalar(dist));
+  ctl.target.copy(center); ctl.minDistance = dist * 0.3; ctl.maxDistance = dist * 1.5;
+  cam.far = dist * 10; cam.updateProjectionMatrix(); ctl.update();
+}
+frame();
+ctl.enablePan = false; ctl.minPolarAngle = 0; ctl.maxPolarAngle = Math.PI; ctl.minAzimuthAngle = -Infinity; ctl.maxAzimuthAngle = Infinity; ctl.rotateSpeed = 0.7;
+ctl.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_ROTATE };
+
+// ピンとUI
+const pinsEl = document.getElementById('pins'), list = document.getElementById('lgList');
+const card = document.getElementById('card');
+let current = null;
+function open(s) {
+  current = s.id;
+  document.getElementById('cE').textContent = s.e; document.getElementById('cT').textContent = s.n;
+  document.getElementById('cD').textContent = s.d; document.getElementById('cQ').hidden = !!s.pos;
+  card.classList.add('show');
+  document.querySelectorAll('.pin').forEach(p => p.classList.toggle('on', p.dataset.id === s.id));
+}
+function close() { current = null; card.classList.remove('show'); document.querySelectorAll('.pin').forEach(p => p.classList.remove('on')); }
+document.getElementById('cX').onclick = close;
+const pins = [];
+SPOTS.forEach(s => {
+  const li = document.createElement('li');
+  li.innerHTML = `<button><span class="e">${s.e}</span><span>${s.n}</span>${s.pos ? '' : '<span class="q">現地で確認</span>'}</button>`;
+  li.firstChild.onclick = () => open(s); list.appendChild(li);
+  if (!s.pos) return;
+  const b = document.createElement('button'); b.className = 'pin'; b.dataset.id = s.id;
+  b.innerHTML = `<span class="ic">${s.e}</span><span class="lb">${s.n.replace(/（.*/, '')}</span>`;
+  b.onclick = e => { e.stopPropagation(); current === s.id ? close() : open(s); };
+  pinsEl.appendChild(b); pins.push({ el: b, v: new THREE.Vector3(...s.pos) });
+});
+const lg = document.getElementById('legend');
+document.getElementById('lgT').onclick = () => { lg.classList.toggle('closed'); document.getElementById('lgA').textContent = lg.classList.contains('closed') ? '▸' : '▾'; };
+if (innerHeight < 640) { lg.classList.add('closed'); document.getElementById('lgA').textContent = '▸'; }
+document.getElementById('chara').onclick = () => open(SPOTS.find(s => s.id === 'bbq'));
+
+const tmp = new THREE.Vector3();
+(function tick() {
+  const w = innerWidth, h = innerHeight;
+  for (const p of pins) {
+    tmp.copy(p.v).project(cam);
+    const x = (tmp.x + 1) / 2 * w, y = (1 - tmp.y) / 2 * h;
+    p.el.style.transform = `translate(${x}px,${y}px) translate(-50%,-100%)`;
+    p.el.style.display = tmp.z < 1 ? '' : 'none';
+    p.el.style.zIndex = String(Math.round((1 - tmp.z) * 10000));
+  }
+  requestAnimationFrame(tick);
+})();
+let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(frame, 120); });
+</script>
+</body>
+</html>
